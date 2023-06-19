@@ -3,7 +3,7 @@ import { sleep } from './utils.js';
 let todos: string[] = [];
 const failureRate = 0.5;
 const sleepTime = 0.25;
-const DEBUG = false;
+const DEBUG = true;
 
 export async function get() {
 	await sleep(sleepTime);

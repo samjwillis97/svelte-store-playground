@@ -3,7 +3,7 @@ import { get, writable, type Writable } from 'svelte/store';
 // config
 const retries = 5;
 const backoff = 500;
-const DEBUG = false;
+const DEBUG = true;
 
 // Would love to get rid of this any
 const storeMap: Map<string, any> = new Map();
