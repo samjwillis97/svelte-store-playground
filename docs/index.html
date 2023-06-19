@@ -5,13 +5,13 @@
 		<link rel="icon" href="./favicon.png" />
 		<meta name="viewport" content="width=device-width" />
 		
-		<link rel="modulepreload" href="./_app/immutable/entry/start.32669ae5.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/index.11bf829d.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.08850a1f.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/index.3f08586d.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/app.a725be23.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/0.ac6341f9.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/2.ef572b6b.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.bdc59702.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.981b2948.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.d74e13bb.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.a9d476b4.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.d67ffd7f.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/0.a0a8ff39.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.4e8c8075.js">
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">
@@ -21,6 +21,12 @@
 <button disabled>Add Item</button>
 <button >Add Item 2</button>
 <button>Clear All</button>
+
+<input value="0.5">
+<input value="0.25">
+
+<input value="5">
+<input value="100">
 
 <div>
 	
@@ -33,7 +39,7 @@
 			
 			<script>
 				{
-					__sveltekit_11l4ont = {
+					__sveltekit_1heoaqa = {
 						assets: "/svelte-store-playground",
 						base: new URL(".", location).pathname.slice(0, -1),
 						env: {}
@@ -44,8 +50,8 @@
 					const data = [null,null];
 
 					Promise.all([
-						import("./_app/immutable/entry/start.32669ae5.js"),
-						import("./_app/immutable/entry/app.a725be23.js")
+						import("./_app/immutable/entry/start.bdc59702.js"),
+						import("./_app/immutable/entry/app.d67ffd7f.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element, {
 							node_ids: [0, 2],

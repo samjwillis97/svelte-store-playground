@@ -1,11 +1,38 @@
 <script lang="ts">
 	import { addTodo, addTodoV2, clearAll, deleteTodo, getTodos } from '../lib/store';
+	import {
+		getConfig as getServiceConfig,
+		updateConfig as updateServiceConfig
+	} from '../lib/service';
+	import { getConfig as getStoreConfig, updateConfig as updateStoreConfig } from '../lib/my-store';
+	import { to_number } from 'svelte/internal';
+
+	// config
+	let serviceConfig = getServiceConfig();
+	let serviceFailureRate = serviceConfig.failureRate;
+	let serviceSleepTime = serviceConfig.sleepTime;
+
+	let storeConfig = getStoreConfig();
+	let storeRetryCount = storeConfig.retryCount;
+	let storeRetryBackoff = storeConfig.retryBackoffTime;
+
+	function handleServiceConfigInputUpdate() {
+		serviceConfig.failureRate = to_number(serviceFailureRate);
+		serviceConfig.sleepTime = to_number(serviceSleepTime);
+		updateServiceConfig(serviceConfig);
+	}
+
+	function handleStoreConfigInputUpdate() {
+		storeConfig.retryCount = to_number(storeRetryCount);
+		storeConfig.retryBackoffTime = to_number(storeRetryBackoff);
+		updateStoreConfig(storeConfig);
+	}
 
 	let todos = getTodos();
 	let addTodoMutator = addTodoV2();
 
 	function handleAddItem() {
-		console.log('adding');
+		console.log('add button');
 		addTodo();
 	}
 
@@ -13,7 +40,7 @@
 		$addTodoMutator.mutate();
 	}
 
-	addTodoMutator.subscribe((v) => console.log(v));
+	// addTodoMutator.subscribe((v) => console.log(v));
 
 	// To communicate mutation error back up to this layer,
 	// need to make the mutation a class, with that mutate method
@@ -25,6 +52,12 @@
 <button disabled={$todos.isLoading} on:click={handleAddItem}>Add Item</button>
 <button disabled={$addTodoMutator.isLoading} on:click={handleAddItemV2}>Add Item 2</button>
 <button on:click={clearAll}>Clear All</button>
+
+<input bind:value={serviceFailureRate} on:change={handleServiceConfigInputUpdate} />
+<input bind:value={serviceSleepTime} on:change={handleServiceConfigInputUpdate} />
+
+<input bind:value={storeRetryCount} on:change={handleStoreConfigInputUpdate} />
+<input bind:value={storeRetryBackoff} on:change={handleStoreConfigInputUpdate} />
 
 <div>
 	{#if $addTodoMutator.isError}

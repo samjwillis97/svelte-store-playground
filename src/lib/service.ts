@@ -1,12 +1,28 @@
 import { sleep } from './utils.js';
 
 let todos: string[] = [];
-const failureRate = 0.5;
-const sleepTime = 0.25;
-const DEBUG = true;
+
+export const DEBUG = true;
+let config: ServiceConfig = {
+	failureRate: 0.5,
+	sleepTime: 0.25
+};
+
+export type ServiceConfig = {
+	failureRate: number;
+	sleepTime: number;
+};
+
+export function getConfig(): ServiceConfig {
+	return config;
+}
+
+export function updateConfig(updated: ServiceConfig) {
+	config = updated;
+}
 
 export async function get() {
-	await sleep(sleepTime);
+	await sleep(config.sleepTime);
 	if (shouldError()) throw new Error('unable to get');
 	if (DEBUG) console.log('service: get');
 	// NOTE: Stringify used to prevent sending back the same ref
@@ -15,7 +31,7 @@ export async function get() {
 }
 
 export async function add() {
-	await sleep(sleepTime);
+	await sleep(config.sleepTime);
 	if (shouldError()) throw new Error('unable to add');
 	todos.push(todos.length.toString());
 	if (DEBUG) console.log('service: add');
@@ -24,7 +40,7 @@ export async function add() {
 }
 
 export async function deleteAll() {
-	await sleep(sleepTime);
+	await sleep(config.sleepTime);
 	if (shouldError()) throw new Error('unable to deleteAll');
 	todos = [];
 	if (DEBUG) console.log('service: deleteAll');
@@ -33,7 +49,7 @@ export async function deleteAll() {
 }
 
 export async function deleteItem(key: string) {
-	await sleep(sleepTime);
+	await sleep(config.sleepTime);
 	if (shouldError()) throw new Error('unable to deleteItem');
 	const index = todos.findIndex((v) => v === key);
 	if (index !== -1) {
@@ -45,5 +61,6 @@ export async function deleteItem(key: string) {
 }
 
 function shouldError() {
-	return Math.random() < failureRate;
+	console.log(config.failureRate);
+	return Math.random() < config.failureRate;
 }

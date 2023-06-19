@@ -5,6 +5,24 @@ const retries = 5;
 const backoff = 500;
 const DEBUG = true;
 
+let config: StoreConfig = {
+	retryCount: 5,
+	retryBackoffTime: 100
+};
+
+export type StoreConfig = {
+	retryCount: number;
+	retryBackoffTime: number;
+};
+
+export function getConfig(): StoreConfig {
+	return config;
+}
+
+export function updateConfig(updated: StoreConfig) {
+	config = updated;
+}
+
 // Would love to get rid of this any
 const storeMap: Map<string, any> = new Map();
 
