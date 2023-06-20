@@ -34,15 +34,12 @@
 	let todoText = '';
 
 	function handleAddItem() {
-		// TODO: How to do this..
 		if (!todoText) return;
-
 		$addTodoMutator.mutate(todoText);
 		todoText = '';
 	}
 
 	function handleInputKeyup(event: KeyboardEvent) {
-		console.log(event);
 		if (event.key === 'Enter') {
 			handleAddItem();
 		}
