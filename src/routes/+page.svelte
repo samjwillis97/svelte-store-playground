@@ -161,7 +161,7 @@
 						</button>
 						<button
 							on:click={() => deleteTodo(todo)}
-							class="py-2 px-4 rounded text-white bg-red-500 hover:bg-red-700"
+							class="py-2 px-4 rounded text-white bg-red-500 hover:bg-red-700 active:bg-red-800 disabled:bg-red-200"
 						>
 							delete
 						</button>
