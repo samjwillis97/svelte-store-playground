@@ -8,12 +8,10 @@ export function getTodos() {
 	return createQuery('todos', get);
 }
 
-export function addTodo(): Writable<Mutator<string[]>> {
-	return mutate<string[]>('todos', add, (data: string[], item: string) => {
-		if (data) {
-			data.push(item);
-			return data;
-		}
+export function addTodo(): Writable<Mutator<string[], { item: string }>> {
+	return mutate<string[], { item: string }>('todos', add, (data: string[], item: string) => {
+		data.push(item);
+		return data;
 	});
 }
 

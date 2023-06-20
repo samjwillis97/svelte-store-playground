@@ -90,18 +90,18 @@ export function refresh<T>(key: string) {
 	tryFunction(mapValue, mapValue.function);
 }
 
-export class Mutator<T> {
+export class Mutator<TStore, TArgs> {
 	private key: string;
-	private fn: (...args: unknown[]) => Promise<unknown>;
-	private optimisticMutateFn?: (data: T, ...args: unknown[]) => T;
+	private fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<unknown>;
+	private optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore;
 
 	public isLoading = false;
 	public isError = false;
 
 	constructor(
 		key: string,
-		fn: () => Promise<unknown>,
-		optimisticMutateFn?: ((data: T) => T) | undefined
+		fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<unknown>,
+		optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore
 	) {
 		this.key = key;
 		this.fn = fn;
@@ -109,21 +109,21 @@ export class Mutator<T> {
 	}
 
 	// TODO: Would be cool to get the type of the provided fn
-	public mutate(...args: unknown[]) {
+	public mutate(...args: Array<TArgs[keyof TArgs]>) {
 		console.log(args);
 		this.isLoading = true;
 		this.isError = false;
 
 		if (DEBUG) console.log(`mutating v2 ${this.key}`);
 
-		const mapValue = storeMap.get(this.key) as MapValue<T>;
+		const mapValue = storeMap.get(this.key) as MapValue<TStore>;
 		const currentValue = get(mapValue.store).data;
 		const copiedValue = JSON.parse(JSON.stringify(currentValue));
 
 		// NOTE: For me later, this happens for looading is triggered
 		// because loading is only triggered once the refetch has started
 		if (this.optimisticMutateFn && currentValue) {
-			const updated = this.optimisticMutateFn(currentValue, args);
+			const updated = this.optimisticMutateFn(currentValue, ...args);
 			mapValue.store.update((store) => {
 				store.data = updated;
 				return store;
@@ -155,11 +155,11 @@ export class Mutator<T> {
 	}
 }
 
-export function mutate<T>(
+export function mutate<TStore, TArgs>(
 	key: string,
-	fn: (...args: unknown[]) => Promise<unknown>, // the return is not used
-	optimisticMutateFn?: (data: T) => T
-): Writable<Mutator<T>> {
+	fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<unknown>,
+	optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore
+): Writable<Mutator<TStore, TArgs>> {
 	const mutator = new Mutator(key, fn, optimisticMutateFn);
 	return writable(mutator);
 }
