@@ -106,7 +106,6 @@ export class Mutator<TStore, TArgs> {
 		this.optimisticMutateFn = optimisticMutateFn;
 	}
 
-	// TODO: Would be cool to get the type of the provided fn
 	public mutate(...args: Array<TArgs[keyof TArgs]>) {
 		console.log(args);
 		this.isLoading = true;

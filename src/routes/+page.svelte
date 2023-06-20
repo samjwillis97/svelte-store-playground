@@ -12,6 +12,7 @@
 
 	function handleAddItem() {
 		if (!todoText) return;
+        // TODO: I want to show a toast if this was success/error
 		$addTodoMutator.mutate(todoText);
 		todoText = '';
 	}
