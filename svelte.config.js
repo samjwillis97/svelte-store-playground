@@ -1,4 +1,5 @@
 import adapter from '@sveltejs/adapter-static';
+import { vitePreprocess } from '@sveltejs/kit/vite';
 
 const dev = 'production' === 'development';
 
@@ -15,7 +16,8 @@ const config = {
 		}
 		// hydrate the <div id="svelte"> element in src/app.html
 		// target: '#svelte'
-	}
+	},
+	preprocess: vitePreprocess()
 };
 
 export default config;

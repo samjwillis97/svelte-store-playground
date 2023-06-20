@@ -48,44 +48,130 @@
 	// ocurred - starting to understand Tanstack Query a bit more
 </script>
 
-<!-- TODO: This disable would work better if it was on the mutation for the event -->
-<button disabled={$todos.isLoading} on:click={handleAddItem}>Add Item</button>
-<button disabled={$addTodoMutator.isLoading} on:click={handleAddItemV2}>Add Item 2</button>
-<button on:click={clearAll}>Clear All</button>
+<div class="flex flex-col gap-5 p-10 items-center">
+	<div class="flex flex-row gap-5 w-full">
+		<div class="flex flex-col w-full gap-2.5">
+			<h3 class="text-xl">Service Configuration</h3>
+			<div class="w-full">
+				<label class="block text-gray-700 text-sm font-bold mb-2" for="serviceFailureRate">
+					Failure Rate
+				</label>
+				<input
+					id="serviceFailureRate"
+					placeholder="Failure Rate"
+					type="number"
+					bind:value={serviceFailureRate}
+					on:change={handleServiceConfigInputUpdate}
+					class="w-full shadow appearance-none border rounded px-3 py-2 text-gray"
+				/>
+			</div>
+			<div class="w-full">
+				<label class="block text-gray-700 text-sm font-bold mb-2" for="serviceSleepTime">
+					Sleep Time (ms)
+				</label>
+				<input
+					id="serviceSleepTime"
+					placeholder="Sleep Time"
+					type="number"
+					bind:value={serviceSleepTime}
+					on:change={handleServiceConfigInputUpdate}
+					class="w-full shadow appearance-none border rounded px-3 py-2 text-gray"
+				/>
+			</div>
+		</div>
+		<div class="flex flex-col w-full gap-2.5">
+			<h3 class="text-xl">Store Configuration</h3>
+			<div class="w-full">
+				<label class="block text-gray-700 text-sm font-bold mb-2" for="storeRetryCount">
+					Retry Count
+				</label>
+				<input
+					id="storeRetryCount"
+					placeholder="Retry Count"
+					type="number"
+					bind:value={storeRetryCount}
+					on:change={handleStoreConfigInputUpdate}
+					class="w-full shadow appearance-none border rounded px-3 py-2 text-gray"
+				/>
+			</div>
+			<div class="w-full">
+				<label class="block text-gray-700 text-sm font-bold mb-2" for="serviceSleepTime">
+					Retry Back Off (ms)
+				</label>
+				<input
+					id="storeRetryBackoff"
+					placeholder="Back Off (ms)"
+					type="number"
+					bind:value={storeRetryBackoff}
+					on:change={handleStoreConfigInputUpdate}
+					class="w-full shadow appearance-none border rounded px-3 py-2 text-gray"
+				/>
+			</div>
+		</div>
+	</div>
 
-<input bind:value={serviceFailureRate} on:change={handleServiceConfigInputUpdate} />
-<input bind:value={serviceSleepTime} on:change={handleServiceConfigInputUpdate} />
+	<div class="flex flex-row gap-2.5 items-center w-full">
+		<button
+			disabled={$todos.isLoading}
+			on:click={handleAddItem}
+			class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700">Add Item</button
+		>
+		<button
+			disabled={$addTodoMutator.isLoading}
+			on:click={handleAddItemV2}
+			class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700">Add Item 2</button
+		>
+		<button on:click={clearAll} class="py-2 px-4 rounded text-white bg-red-500 hover:bg-red-700"
+			>Clear All</button
+		>
+		<div class="flex flex-row gap-1">
+			<p>Current Status:</p>
+			{#if $addTodoMutator.isLoading}
+				<p>Adder Loading,</p>
+			{/if}
+			{#if $addTodoMutator.isError}
+				<p>Error Adding,</p>
+			{/if}
+			{#if $todos.isLoading}
+				<p>Fetching Items,</p>
+			{:else if !$todos.isError}
+				<p>Waiting For Input...</p>
+			{/if}
+			{#if $todos.isError}
+				<p>Error Occured Fetching - Retrying</p>
+			{/if}
+		</div>
+	</div>
 
-<input bind:value={storeRetryCount} on:change={handleStoreConfigInputUpdate} />
-<input bind:value={storeRetryBackoff} on:change={handleStoreConfigInputUpdate} />
-
-<div>
-	{#if $addTodoMutator.isError}
-		<p>Adder Loading</p>
-	{/if}
-	{#if $addTodoMutator.isError}
-		<p>Error Adding</p>
-	{/if}
-	{#if $todos.isLoading}
-		<p>Loading</p>
-	{:else}
-		<p>Finished</p>
-	{/if}
-	{#if $todos.isError}
-		<p>Error Loading</p>
-	{/if}
-</div>
-
-<div>
-	{#if $todos.data && $todos.data.length > 0}
-		<ul>
+	<div>
+		{#if $todos.data && $todos.data.length > 0}
 			{#each $todos.data as todo}
-				<div>
-					<li>{todo}</li>
-					<button> info </button>
-					<button on:click={() => deleteTodo(todo)}> delete </button>
+				<div
+					class="w-96 border shadow rounded px-5 py-5 flex flex-row gap-2.5 justify-between items-center"
+				>
+					<div>
+						<p class="text-xl">
+							{todo}
+						</p>
+					</div>
+					<div class="flex flex-row gap-2.5">
+						<button
+							disabled={true}
+							class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700 disabled:bg-blue-200"
+						>
+							info
+						</button>
+						<button
+							on:click={() => deleteTodo(todo)}
+							class="py-2 px-4 rounded text-white bg-red-500 hover:bg-red-700"
+						>
+							delete
+						</button>
+					</div>
 				</div>
 			{/each}
-		</ul>
-	{/if}
+		{/if}
+	</div>
 </div>
+
+<!-- TODO: This disable would work better if it was on the mutation for the event -->
