@@ -6,13 +6,13 @@
 		<meta name="viewport" content="width=device-width" />
 		
 		<link href="./_app/immutable/assets/0.ed73cc15.css" rel="stylesheet">
-		<link rel="modulepreload" href="./_app/immutable/entry/start.5bbc145e.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.8dbfeb5a.js">
 		<link rel="modulepreload" href="./_app/immutable/chunks/index.826d2e79.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.21926ad7.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.e1557db7.js">
 		<link rel="modulepreload" href="./_app/immutable/chunks/index.afe0d78c.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/app.add4e382.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.a609f320.js">
 		<link rel="modulepreload" href="./_app/immutable/nodes/0.53489516.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/2.081a3861.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.f219fd8a.js">
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">
@@ -33,7 +33,8 @@
 				</label>
 				<input id="storeRetryBackoff" placeholder="Back Off (ms)" type="number" class="w-full shadow appearance-none border rounded px-3 py-2 text-gray" value="100"></div></div></div>
 
-	<div class="flex flex-row gap-2.5 items-center w-full"><button  class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-200">Add Item</button>
+	<div class="flex flex-row gap-2.5 items-center w-full"><input placeholder="Item" type="text" class="shadow appearance-none border rounded px-3 py-2 text-gray" value="">
+		<button disabled class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-200">Add Item</button>
 		<button class="py-2 px-4 rounded text-white bg-red-500 hover:bg-red-700 active:bg-red-800 disable:bg-red-200">Clear All</button>
 		<div class="flex flex-row gap-1"><p>Current Status:</p>
 			
@@ -41,7 +42,7 @@
 			<p>Fetching Items,</p>
 			</div></div>
 
-	<div></div></div>
+	<div class="flex flex-col gap-2.5"></div></div>
 
 
 
@@ -49,7 +50,7 @@
 			
 			<script>
 				{
-					__sveltekit_1pq2z3l = {
+					__sveltekit_war6wp = {
 						assets: "/svelte-store-playground",
 						base: new URL(".", location).pathname.slice(0, -1),
 						env: {}
@@ -60,8 +61,8 @@
 					const data = [null,null];
 
 					Promise.all([
-						import("./_app/immutable/entry/start.5bbc145e.js"),
-						import("./_app/immutable/entry/app.add4e382.js")
+						import("./_app/immutable/entry/start.8dbfeb5a.js"),
+						import("./_app/immutable/entry/app.a609f320.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element, {
 							node_ids: [0, 2],

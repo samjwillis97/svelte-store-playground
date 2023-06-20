@@ -31,13 +31,17 @@
 	let todos = getTodos();
 	let addTodoMutator = addTodoV2();
 
+	let todoText = '';
+
 	function handleAddItem() {
 		console.log('add button');
 		addTodo();
 	}
 
 	function handleAddItemV2() {
+		// TODO: How to do this..
 		$addTodoMutator.mutate();
+		todoText = '';
 	}
 
 	// addTodoMutator.subscribe((v) => console.log(v));
@@ -111,8 +115,14 @@
 	</div>
 
 	<div class="flex flex-row gap-2.5 items-center w-full">
+		<input
+			placeholder="Item"
+			type="text"
+			bind:value={todoText}
+			class="shadow appearance-none border rounded px-3 py-2 text-gray"
+		/>
 		<button
-			disabled={$addTodoMutator.isLoading}
+			disabled={$addTodoMutator.isLoading || !todoText}
 			on:click={handleAddItemV2}
 			class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-200"
 			>Add Item</button
@@ -141,13 +151,13 @@
 		</div>
 	</div>
 
-	<div>
+	<div class="flex flex-col gap-2.5">
 		{#if $todos.data && $todos.data.length > 0}
 			{#each $todos.data as todo}
 				<div
 					class="w-96 border shadow rounded px-5 py-5 flex flex-row gap-2.5 justify-between items-center"
 				>
-					<div>
+					<div class="flex flex-row gap-2.5">
 						<p class="text-xl">
 							{todo}
 						</p>
