@@ -23,14 +23,14 @@ export function updateConfig(updated: StoreConfig) {
 	config = updated;
 }
 
-// Would love to get rid of this any
+// FIXME: Would love to get rid of this any - unsure if it will be possible
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const storeMap: Map<string, any> = new Map();
 
 // TODO: Understand how a list of keys would work - in regards to hashing etc.
 
 export type MapValue<T> = {
 	function: () => Promise<T>;
-	// data: T | undefined; // This could be replaced with get()
 	store: Writable<StoreValue<T>>;
 };
 
@@ -92,7 +92,8 @@ export function refresh<T>(key: string) {
 
 export class Mutator<TStore, TArgs> {
 	private key: string;
-	private fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<unknown>;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	private fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<any>;
 	private optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore;
 
 	public isLoading = false;
@@ -100,7 +101,8 @@ export class Mutator<TStore, TArgs> {
 
 	constructor(
 		key: string,
-		fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<unknown>,
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<any>,
 		optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore
 	) {
 		this.key = key;
@@ -142,7 +144,6 @@ export class Mutator<TStore, TArgs> {
 				this.isLoading = false;
 				if (DEBUG) console.log(`error mutating: ${this.key}`);
 				if (this.optimisticMutateFn) {
-					// mapValue.data = copiedValue;
 					mapValue.store.update((store) => {
 						store.data = copiedValue;
 						return store;
@@ -157,7 +158,8 @@ export class Mutator<TStore, TArgs> {
 
 export function mutate<TStore, TArgs>(
 	key: string,
-	fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<unknown>,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<any>,
 	optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore
 ): Writable<Mutator<TStore, TArgs>> {
 	const mutator = new Mutator(key, fn, optimisticMutateFn);
@@ -167,7 +169,6 @@ export function mutate<TStore, TArgs>(
 function newMapValue<T>(fn: () => Promise<T>): MapValue<T> {
 	return {
 		function: fn,
-		// data: undefined,
 		store: writable({
 			isLoading: true,
 			isError: false,
@@ -177,7 +178,6 @@ function newMapValue<T>(fn: () => Promise<T>): MapValue<T> {
 }
 
 function setMapValueValue<T>(mapValue: MapValue<T>, value: T) {
-	// mapValue.data = value;
 	mapValue.store.update((store) => {
 		store.isLoading = false;
 		store.isError = false;
