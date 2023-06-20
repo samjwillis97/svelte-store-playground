@@ -30,10 +30,10 @@ export async function get() {
 	return JSON.parse(JSON.stringify(todos));
 }
 
-export async function add() {
+export async function add(name: string) {
 	await sleep(config.sleepTime);
 	if (shouldError()) throw new Error('unable to add');
-	todos.push(todos.length.toString());
+	todos.push(name);
 	if (DEBUG) console.log('service: add');
 	if (DEBUG) console.log(todos);
 	return true;

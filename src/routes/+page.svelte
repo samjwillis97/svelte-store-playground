@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { addTodo, addTodoV2, clearAll, deleteTodo, getTodos } from '../lib/store';
+	import { addTodo, clearAll, deleteTodo, getTodos } from '../lib/store';
 	import {
 		getConfig as getServiceConfig,
 		updateConfig as updateServiceConfig
@@ -29,19 +29,23 @@
 	}
 
 	let todos = getTodos();
-	let addTodoMutator = addTodoV2();
+	let addTodoMutator = addTodo();
 
 	let todoText = '';
 
 	function handleAddItem() {
-		console.log('add button');
-		addTodo();
+		// TODO: How to do this..
+		if (!todoText) return;
+
+		$addTodoMutator.mutate(todoText);
+		todoText = '';
 	}
 
-	function handleAddItemV2() {
-		// TODO: How to do this..
-		$addTodoMutator.mutate();
-		todoText = '';
+	function handleInputKeyup(event: KeyboardEvent) {
+		console.log(event);
+		if (event.key === 'Enter') {
+			handleAddItem();
+		}
 	}
 
 	// addTodoMutator.subscribe((v) => console.log(v));
@@ -119,11 +123,12 @@
 			placeholder="Item"
 			type="text"
 			bind:value={todoText}
+			on:keyup={handleInputKeyup}
 			class="shadow appearance-none border rounded px-3 py-2 text-gray"
 		/>
 		<button
 			disabled={$addTodoMutator.isLoading || !todoText}
-			on:click={handleAddItemV2}
+			on:click={handleAddItem}
 			class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-200"
 			>Add Item</button
 		>

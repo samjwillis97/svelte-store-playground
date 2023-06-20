@@ -1,5 +1,5 @@
 import type { Writable } from 'svelte/store';
-import { Mutator, createQuery, mutate, mutateV2 } from './my-store.js';
+import { Mutator, createQuery, mutate } from './my-store.js';
 import { get, add, deleteItem, deleteAll } from './service.js';
 
 // const DEBUG = false;
@@ -8,19 +8,10 @@ export function getTodos() {
 	return createQuery('todos', get);
 }
 
-export function addTodoV2(): Writable<Mutator<string[]>> {
-	return mutateV2<string[]>('todos', add, (data) => {
+export function addTodo(): Writable<Mutator<string[]>> {
+	return mutate<string[]>('todos', add, (data: string[], item: string) => {
 		if (data) {
-			data.push(data?.length.toString());
-			return data;
-		}
-	});
-}
-
-export function addTodo() {
-	mutate<string[]>('todos', add, (data) => {
-		if (data) {
-			data.push(data?.length.toString());
+			data.push(item);
 			return data;
 		}
 	});

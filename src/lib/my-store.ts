@@ -92,8 +92,8 @@ export function refresh<T>(key: string) {
 
 export class Mutator<T> {
 	private key: string;
-	private fn: () => Promise<unknown>;
-	private optimisticMutateFn?: (data: T) => T;
+	private fn: (...args: unknown[]) => Promise<unknown>;
+	private optimisticMutateFn?: (data: T, ...args: unknown[]) => T;
 
 	public isLoading = false;
 	public isError = false;
@@ -108,7 +108,9 @@ export class Mutator<T> {
 		this.optimisticMutateFn = optimisticMutateFn;
 	}
 
-	public mutate() {
+	// TODO: Would be cool to get the type of the provided fn
+	public mutate(...args: unknown[]) {
+		console.log(args);
 		this.isLoading = true;
 		this.isError = false;
 
@@ -121,14 +123,14 @@ export class Mutator<T> {
 		// NOTE: For me later, this happens for looading is triggered
 		// because loading is only triggered once the refetch has started
 		if (this.optimisticMutateFn && currentValue) {
-			const updated = this.optimisticMutateFn(currentValue);
+			const updated = this.optimisticMutateFn(currentValue, args);
 			mapValue.store.update((store) => {
 				store.data = updated;
 				return store;
 			});
 		}
 
-		this.fn()
+		this.fn(...args)
 			.then(() => {
 				if (mapValue) {
 					refresh(this.key);
@@ -153,55 +155,13 @@ export class Mutator<T> {
 	}
 }
 
-export function mutateV2<T>(
+export function mutate<T>(
 	key: string,
-	fn: () => Promise<unknown>, // the return is not used
+	fn: (...args: unknown[]) => Promise<unknown>, // the return is not used
 	optimisticMutateFn?: (data: T) => T
 ): Writable<Mutator<T>> {
 	const mutator = new Mutator(key, fn, optimisticMutateFn);
 	return writable(mutator);
-}
-
-// TODO: How to communicate error back out?
-// fn is async
-// NOTE: T is tied to the key
-export function mutate<T>(
-	key: string,
-	fn: () => Promise<unknown>, // the return is not used
-	optimisticMutateFn?: (data: T) => T
-) {
-	if (DEBUG) console.log(`mutating ${key}`);
-
-	const mapValue = storeMap.get(key) as MapValue<T>;
-	const currentValue = get(mapValue.store).data;
-	const copiedValue = JSON.parse(JSON.stringify(currentValue));
-
-	// NOTE: For me later, this happens for looading is triggered
-	// because loading is only triggered once the refetch has started
-	if (optimisticMutateFn && currentValue) {
-		const updated = optimisticMutateFn(currentValue);
-		mapValue.store.update((store) => {
-			store.data = updated;
-			return store;
-		});
-	}
-
-	fn()
-		.then(() => {
-			if (mapValue) {
-				refresh(key);
-			}
-		})
-		.catch(() => {
-			if (DEBUG) console.log(`error mutating: ${key}`);
-			if (optimisticMutateFn) {
-				// mapValue.data = copiedValue;
-				mapValue.store.update((store) => {
-					store.data = copiedValue;
-					return store;
-				});
-			}
-		});
 }
 
 function newMapValue<T>(fn: () => Promise<T>): MapValue<T> {
