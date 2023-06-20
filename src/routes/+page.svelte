@@ -112,16 +112,14 @@
 
 	<div class="flex flex-row gap-2.5 items-center w-full">
 		<button
-			disabled={$todos.isLoading}
-			on:click={handleAddItem}
-			class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700">Add Item</button
-		>
-		<button
 			disabled={$addTodoMutator.isLoading}
 			on:click={handleAddItemV2}
-			class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700">Add Item 2</button
+			class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-200"
+			>Add Item</button
 		>
-		<button on:click={clearAll} class="py-2 px-4 rounded text-white bg-red-500 hover:bg-red-700"
+		<button
+			on:click={clearAll}
+			class="py-2 px-4 rounded text-white bg-red-500 hover:bg-red-700 active:bg-red-800 disable:bg-red-200"
 			>Clear All</button
 		>
 		<div class="flex flex-row gap-1">
