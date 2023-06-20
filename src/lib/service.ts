@@ -61,6 +61,5 @@ export async function deleteItem(key: string) {
 }
 
 function shouldError() {
-	console.log(config.failureRate);
 	return Math.random() < config.failureRate;
 }
