@@ -4,7 +4,7 @@ let todos: string[] = [];
 
 export const DEBUG = true;
 let config: ServiceConfig = {
-	failureRate: 0.5,
+	failureRate: 0.05,
 	sleepTime: 0.25
 };
 

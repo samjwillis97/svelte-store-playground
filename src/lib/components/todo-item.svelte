@@ -1,0 +1,33 @@
+<script lang="ts">
+	import { deleteTodo } from '$lib/store';
+
+	export let todo: string;
+
+	let deleteMutator = deleteTodo();
+</script>
+
+{#if todo}
+	<div
+		class="w-96 border shadow rounded px-5 py-5 flex flex-row gap-2.5 justify-between items-center"
+	>
+		<div class="flex flex-row gap-2.5">
+			<p class="text-xl">
+				{todo}
+			</p>
+		</div>
+		<div class="flex flex-row gap-2.5">
+			<button
+				disabled={true}
+				class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700 disabled:bg-blue-200"
+			>
+				info
+			</button>
+			<button
+				on:click={() => $deleteMutator.mutate(todo)}
+				class="py-2 px-4 rounded text-white bg-red-500 hover:bg-red-700 active:bg-red-800 disabled:bg-red-200"
+			>
+				delete
+			</button>
+		</div>
+	</div>
+{/if}

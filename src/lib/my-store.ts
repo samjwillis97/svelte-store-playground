@@ -1,13 +1,11 @@
 import { get, writable, type Writable } from 'svelte/store';
 
 // config
-const retries = 5;
-const backoff = 500;
 const DEBUG = true;
 
 let config: StoreConfig = {
 	retryCount: 5,
-	retryBackoffTime: 100
+	retryBackoffTime: 200
 };
 
 export type StoreConfig = {
@@ -27,8 +25,6 @@ export function updateConfig(updated: StoreConfig) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const storeMap: Map<string, any> = new Map();
 
-// TODO: Understand how a list of keys would work - in regards to hashing etc.
-
 export type MapValue<T> = {
 	function: () => Promise<T>;
 	store: Writable<StoreValue<T>>;
@@ -40,7 +36,7 @@ export type StoreValue<T> = {
 	data: T | undefined;
 };
 
-// fn has to be async - which is cool by me
+// TODO: Understand how a list of keys would work - in regards to hashing etc.
 export function createQuery<T>(key: string, fn: () => Promise<T>): Writable<StoreValue<T>> {
 	const storeValue = storeMap.get(key);
 	if (storeValue) {
@@ -60,7 +56,7 @@ export function createQuery<T>(key: string, fn: () => Promise<T>): Writable<Stor
 
 function tryFunction<T>(mapValue: MapValue<T>, fn: () => Promise<T>, tryCount = 0) {
 	if (DEBUG) console.log('executing fn');
-	if (tryCount < retries) {
+	if (tryCount < config.retryBackoffTime) {
 		fn()
 			.then((v) => setMapValueValue(mapValue, v))
 			.catch(() => {
@@ -72,7 +68,7 @@ function tryFunction<T>(mapValue: MapValue<T>, fn: () => Promise<T>, tryCount = 
 				if (DEBUG) console.log(`retry: ${tryCount}`);
 				setTimeout(() => {
 					tryFunction<T>(mapValue, fn, tryCount);
-				}, tryCount * backoff);
+				}, tryCount * config.retryBackoffTime);
 			});
 	}
 }
