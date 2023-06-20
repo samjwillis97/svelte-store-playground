@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="./favicon.png" />
+		<meta name="viewport" content="width=device-width" />
+		
+		<link href="./_app/immutable/assets/0.ed73cc15.css" rel="stylesheet">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.94394f86.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.826d2e79.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/singletons.002f0adc.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.afe0d78c.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.a1dc2cb0.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/0.53489516.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/2.f219fd8a.js">
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">
+
+
+<div class="flex flex-col gap-5 p-10 items-center"><div class="flex flex-row gap-5 w-full"><div class="flex flex-col w-full gap-2.5"><h3 class="text-xl">Service Configuration</h3>
+			<div class="w-full"><label class="block text-gray-700 text-sm font-bold mb-2" for="serviceFailureRate">Failure Rate
+				</label>
+				<input id="serviceFailureRate" placeholder="Failure Rate" type="number" class="w-full shadow appearance-none border rounded px-3 py-2 text-gray" value="0.5"></div>
+			<div class="w-full"><label class="block text-gray-700 text-sm font-bold mb-2" for="serviceSleepTime">Sleep Time (ms)
+				</label>
+				<input id="serviceSleepTime" placeholder="Sleep Time" type="number" class="w-full shadow appearance-none border rounded px-3 py-2 text-gray" value="0.25"></div></div>
+		<div class="flex flex-col w-full gap-2.5"><h3 class="text-xl">Store Configuration</h3>
+			<div class="w-full"><label class="block text-gray-700 text-sm font-bold mb-2" for="storeRetryCount">Retry Count
+				</label>
+				<input id="storeRetryCount" placeholder="Retry Count" type="number" class="w-full shadow appearance-none border rounded px-3 py-2 text-gray" value="5"></div>
+			<div class="w-full"><label class="block text-gray-700 text-sm font-bold mb-2" for="serviceSleepTime">Retry Back Off (ms)
+				</label>
+				<input id="storeRetryBackoff" placeholder="Back Off (ms)" type="number" class="w-full shadow appearance-none border rounded px-3 py-2 text-gray" value="100"></div></div></div>
+
+	<div class="flex flex-row gap-2.5 items-center w-full"><input placeholder="Item" type="text" class="shadow appearance-none border rounded px-3 py-2 text-gray" value="">
+		<button disabled class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-200">Add Item</button>
+		<button class="py-2 px-4 rounded text-white bg-red-500 hover:bg-red-700 active:bg-red-800 disable:bg-red-200">Clear All</button>
+		<div class="flex flex-row gap-1"><p>Current Status:</p>
+			
+			
+			<p>Fetching Items,</p>
+			</div></div>
+
+	<div class="flex flex-col gap-2.5"></div></div>
+
+
+
+
+			
+			<script>
+				{
+					__sveltekit_jmolrx = {
+						assets: "/svelte-store-playground",
+						base: new URL(".", location).pathname.slice(0, -1),
+						env: {}
+					};
+
+					const element = document.currentScript.parentElement;
+
+					const data = [null,null];
+
+					Promise.all([
+						import("./_app/immutable/entry/start.94394f86.js"),
+						import("./_app/immutable/entry/app.a1dc2cb0.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 2],
+							data,
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
+	</body>
+</html>
