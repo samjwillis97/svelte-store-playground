@@ -1,10 +1,9 @@
 <script lang="ts">
-	import { addTodo, clearAll, deleteTodo, getTodos } from '../lib/store';
+	import { addTodo, clearAll, getTodos } from '../lib/store';
 	import ServiceConfig from '$lib/components/service-config.svelte';
 	import StoreConfig from '$lib/components/store-config.svelte';
 	import TodoItem from '$lib/components/todo-item.svelte';
 
-	// config
 	let todos = getTodos();
 	let addTodoMutator = addTodo();
 	let clearAllMutator = clearAll();
