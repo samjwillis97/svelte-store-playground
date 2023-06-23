@@ -3,23 +3,23 @@
 	import ServiceConfig from '$lib/components/service-config.svelte';
 	import StoreConfig from '$lib/components/store-config.svelte';
 	import TodoItem from '$lib/components/todo-item.svelte';
-	import { toast } from '@zerodevx/svelte-toast';
+	import { failure, success } from '$lib/my-toast';
 
 	let todos = getTodos();
 	let clearAllMutator = clearAll({
 		onSuccessFn: () => {
-			toast.push(`Cleared All 🗑️`);
+			success(`Cleared All 🗑️`);
 		},
 		onErrorFn: () => {
-			toast.push(`Error occured clearing all 😔`);
+			failure(`Error occured clearing all 😔`);
 		}
 	});
 	let addTodoMutator = addTodo({
 		onSuccessFn: (name: string) => {
-			toast.push(`${name} Added 😊`);
+			success(`${name} Added 😊`);
 		},
 		onErrorFn: () => {
-			toast.push(`Error ocurred adding 😔`);
+			failure(`Error ocurred adding 😔`);
 		}
 	});
 

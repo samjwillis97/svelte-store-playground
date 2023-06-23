@@ -1,20 +1,21 @@
 <script lang="ts">
+	import { failure, success } from '$lib/my-toast';
 	import { deleteTodo } from '$lib/store';
-	import { toast } from '@zerodevx/svelte-toast';
 
 	export let todo: string;
 
 	let deleteMutator = deleteTodo({
 		onSuccessFn: (item: string) => {
-			toast.push(`Cleared ${item} 🗑️`);
+			success(`Cleared ${item} 🗑️`);
 		},
 		onErrorFn: () => {
-			toast.push('Error occured deleting 😔');
+			failure('Error occured deleting 😔');
 		}
 	});
 </script>
 
 {#if todo}
+	<!-- TODO: if the element itself is still loading disable buttons (don't know how, like how to know whether it is real)-->
 	<div
 		class="w-96 border shadow rounded px-5 py-5 flex flex-row gap-2.5 justify-between items-center"
 	>
