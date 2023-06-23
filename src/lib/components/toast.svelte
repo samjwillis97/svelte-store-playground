@@ -19,27 +19,28 @@
 </div>
 
 <style lang="postcss">
-	.wrap {
-		display: contents;
-		font-family: Roboto, sans-serif;
-		font-size: 0.875rem;
-		/* You can set CSS vars here too */
-	}
-	.wrap :global(strong) {
-		font-weight: 600;
-	}
-
 	.wrap :global(._toastMsg) {
-		@apply ml-2;
+		@apply ml-2 text-sm;
+		/* width: unset; */
 	}
 
 	.wrap :global(._toastItem) {
 		/* Border isn't working properly */
-		@apply rounded border-2 border-black drop-shadow-lg opacity-95;
+		@apply rounded-md drop-shadow-lg opacity-80;
+		min-height: unset;
 	}
 
+	/* TODO: Icon on the left */
+	/* TODO: Dark Border */
 	.wrap :global(.success ._toastItem) {
-		@apply bg-green-500;
+		@apply bg-green-300;
+	}
+
+	.wrap :global(.success ._toastMsg) {
+		@apply text-neutral-700;
+	}
+	.wrap :global(.success ._toastBtn) {
+		@apply text-neutral-700;
 	}
 
 	.wrap :global(.warning ._toastItem) {
