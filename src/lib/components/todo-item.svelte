@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { failure, success } from '$lib/my-toast';
+	import type { TodoItem } from '$lib/service';
 	import { deleteTodo } from '$lib/store';
 
-	export let todo: string;
+	export let todo: TodoItem;
 
 	let deleteMutator = deleteTodo({
 		onSuccessFn: (item: string) => {
@@ -21,7 +22,7 @@
 	>
 		<div class="flex flex-row gap-2.5">
 			<p class="text-xl">
-				{todo}
+				{todo.name}
 			</p>
 		</div>
 		<div class="flex flex-row gap-2.5">
@@ -29,13 +30,13 @@
 				disabled={true}
 				class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700 disabled:bg-blue-200"
 			>
-				info
+				Info
 			</button>
 			<button
-				on:click={() => $deleteMutator.mutate(todo)}
+				on:click={() => $deleteMutator.mutate(todo.name)}
 				class="py-2 px-4 rounded text-white bg-red-500 hover:bg-red-700 active:bg-red-800 disabled:bg-red-200"
 			>
-				delete
+				Delete
 			</button>
 		</div>
 	</div>

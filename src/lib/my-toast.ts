@@ -2,7 +2,7 @@ import { toast } from '@zerodevx/svelte-toast';
 
 export const success = (m: string) =>
 	toast.push(m, {
-		duration: 2000,
+		duration: 2500,
 		classes: ['success']
 	});
 

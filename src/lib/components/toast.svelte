@@ -37,10 +37,10 @@
 	}
 
 	.wrap :global(.success ._toastMsg) {
-		@apply text-neutral-700;
+		@apply text-neutral-800;
 	}
 	.wrap :global(.success ._toastBtn) {
-		@apply text-neutral-700;
+		@apply text-neutral-800;
 	}
 
 	.wrap :global(.warning ._toastItem) {

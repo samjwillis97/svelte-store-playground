@@ -87,6 +87,7 @@
 		</div>
 	</div>
 
+	<!-- TODO: Handle overflow properly -->
 	<div class="flex flex-col gap-2.5">
 		{#if $todos.data && $todos.data.length > 0}
 			{#each $todos.data as todo}
