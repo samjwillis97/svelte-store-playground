@@ -30,7 +30,7 @@
 	</div>
 	<div class="w-full">
 		<label class="block text-gray-700 text-sm font-bold mb-2" for="serviceSleepTime">
-			Sleep Time (ms)
+			Sleep Time (s)
 		</label>
 		<input
 			id="serviceSleepTime"

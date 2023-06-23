@@ -3,18 +3,37 @@
 	import ServiceConfig from '$lib/components/service-config.svelte';
 	import StoreConfig from '$lib/components/store-config.svelte';
 	import TodoItem from '$lib/components/todo-item.svelte';
+	import { toast } from '@zerodevx/svelte-toast';
 
 	let todos = getTodos();
-	let addTodoMutator = addTodo();
-	let clearAllMutator = clearAll();
+	let clearAllMutator = clearAll({
+		onSuccessFn: () => {
+			toast.push(`Cleared All 🗑️`);
+		},
+		onErrorFn: () => {
+			toast.push(`Error occured clearing all 😔`);
+		}
+	});
+	let addTodoMutator = addTodo({
+		onSuccessFn: (name: string) => {
+			toast.push(`${name} Added 😊`);
+		},
+		onErrorFn: () => {
+			toast.push(`Error ocurred adding 😔`);
+		}
+	});
 
 	let todoText = '';
-
 	function handleAddItem() {
-		if (!todoText) return;
-        // TODO: I want to show a toast if this was success/error
+		if (!todoText || $addTodoMutator.isLoading) return;
+
 		$addTodoMutator.mutate(todoText);
+
 		todoText = '';
+	}
+
+	function clearAllItems() {
+		$clearAllMutator.mutate();
 	}
 
 	function handleInputKeyup(event: KeyboardEvent) {
@@ -45,7 +64,7 @@
 			>Add Item</button
 		>
 		<button
-			on:click={() => $clearAllMutator.mutate()}
+			on:click={clearAllItems}
 			class="py-2 px-4 rounded text-white bg-red-500 hover:bg-red-700 active:bg-red-800 disable:bg-red-200"
 			>Clear All</button
 		>
@@ -76,5 +95,3 @@
 		{/if}
 	</div>
 </div>
-
-<!-- TODO: This disable would work better if it was on the mutation for the event -->

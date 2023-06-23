@@ -1,9 +1,17 @@
 <script lang="ts">
 	import { deleteTodo } from '$lib/store';
+	import { toast } from '@zerodevx/svelte-toast';
 
 	export let todo: string;
 
-	let deleteMutator = deleteTodo();
+	let deleteMutator = deleteTodo({
+		onSuccessFn: (item: string) => {
+			toast.push(`Cleared ${item} 🗑️`);
+		},
+		onErrorFn: () => {
+			toast.push('Error occured deleting 😔');
+		}
+	});
 </script>
 
 {#if todo}

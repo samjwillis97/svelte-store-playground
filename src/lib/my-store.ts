@@ -55,7 +55,7 @@ export function createQuery<T>(key: string, fn: () => Promise<T>): Writable<Stor
 }
 
 function tryFunction<T>(mapValue: MapValue<T>, fn: () => Promise<T>, tryCount = 0) {
-	if (DEBUG) console.log('executing fn');
+	if (DEBUG) console.log(`executing fn - try ${tryCount}`);
 	if (tryCount < config.retryBackoffTime) {
 		fn()
 			.then((v) => setMapValueValue(mapValue, v))
@@ -88,26 +88,32 @@ export function refresh<T>(key: string) {
 
 export class Mutator<TStore, TArgs> {
 	private key: string;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<any>;
+	private fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<void>;
 	private optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore;
+
+	private onSuccessFn?: (...args: Array<TArgs[keyof TArgs]>) => void;
+	private onErrorFn?: (...args: Array<TArgs[keyof TArgs]>) => void;
 
 	public isLoading = false;
 	public isError = false;
 
 	constructor(
 		key: string,
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<any>,
-		optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore
+		fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<void>,
+		options?: {
+			optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore;
+			onSuccessFn?: (...args: Array<TArgs[keyof TArgs]>) => void;
+			onErrorFn?: (...args: Array<TArgs[keyof TArgs]>) => void;
+		}
 	) {
 		this.key = key;
 		this.fn = fn;
-		this.optimisticMutateFn = optimisticMutateFn;
+		this.optimisticMutateFn = options?.optimisticMutateFn;
+		this.onSuccessFn = options?.onSuccessFn;
+		this.onErrorFn = options?.onErrorFn;
 	}
 
 	public mutate(...args: Array<TArgs[keyof TArgs]>) {
-		console.log(args);
 		this.isLoading = true;
 		this.isError = false;
 
@@ -132,12 +138,17 @@ export class Mutator<TStore, TArgs> {
 				if (mapValue) {
 					refresh(this.key);
 				}
-				this.isLoading = false;
+
+				if (this.onSuccessFn) {
+					this.onSuccessFn(...args);
+				}
 			})
 			.catch(() => {
 				this.isError = true;
-				this.isLoading = false;
 				if (DEBUG) console.log(`error mutating: ${this.key}`);
+				if (this.onErrorFn) {
+					this.onErrorFn(...args);
+				}
 				if (this.optimisticMutateFn) {
 					mapValue.store.update((store) => {
 						store.data = copiedValue;
@@ -153,11 +164,14 @@ export class Mutator<TStore, TArgs> {
 
 export function mutate<TStore, TArgs>(
 	key: string,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<any>,
-	optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore
+	fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<void>,
+	options?: {
+		optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore;
+		onSuccessFn?: (...args: Array<TArgs[keyof TArgs]>) => void;
+		onErrorFn?: (...args: Array<TArgs[keyof TArgs]>) => void;
+	}
 ): Writable<Mutator<TStore, TArgs>> {
-	const mutator = new Mutator(key, fn, optimisticMutateFn);
+	const mutator = new Mutator(key, fn, options);
 	return writable(mutator);
 }
 
