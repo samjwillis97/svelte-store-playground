@@ -8,13 +8,16 @@
 		DialogTitle,
 		DialogTrigger
 	} from './ui/dialog';
-	import { Label } from './ui/label';
+	import { Dialog as DialogPrimitive } from 'radix-svelte';
 	import { Button, buttonVariants } from './ui/button';
-	import { Input } from './ui/input';
 	import type { TodoItem } from '$lib/service';
 	import { Textarea } from './ui/textarea';
 
 	export let todo: TodoItem;
+
+	function saveChanges() {
+		console.log(todo.description);
+	}
 </script>
 
 <Dialog modal={true}>
@@ -26,9 +29,11 @@
 				Make changes to the item here. Click save when you're done.
 			</DialogDescription>
 		</DialogHeader>
-		<Textarea placeholder="Insert summary here..." />
+		<Textarea placeholder="Insert summary here..." bind:value={todo.description} />
 		<DialogFooter>
-			<Button type="submit">Save changes</Button>
+			<DialogPrimitive.Close>
+				<Button on:click={saveChanges}>Save changes</Button>
+			</DialogPrimitive.Close>
 		</DialogFooter>
 	</DialogContent>
 </Dialog>

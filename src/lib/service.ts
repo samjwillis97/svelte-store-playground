@@ -7,6 +7,11 @@ export type TodoItem = {
 	description?: string;
 };
 
+export type UpdateTodoItem = {
+	name?: string;
+	description?: string;
+};
+
 export const DEBUG = true;
 let config: ServiceConfig = {
 	failureRate: 0.05,
@@ -30,8 +35,8 @@ export async function get() {
 	await sleep(config.sleepTime);
 	if (shouldError()) throw new Error('unable to get');
 	if (DEBUG) console.log('service: get');
-	// NOTE: Stringify used to prevent sending back the same ref
 	if (DEBUG) console.log(todos);
+	// NOTE: Stringify used to prevent sending back the same ref
 	return JSON.parse(JSON.stringify(todos));
 }
 
@@ -41,6 +46,20 @@ export async function add(name: string) {
 	todos.push({ name });
 	if (DEBUG) console.log('service: add');
 	if (DEBUG) console.log(todos);
+	return true;
+}
+
+export async function update(name: string, update: UpdateTodoItem) {
+	await sleep(config.sleepTime);
+	if (shouldError()) throw new Error('unable to update');
+	if (DEBUG) console.log('service: update');
+	if (DEBUG) console.log(todos);
+
+	const index = todos.findIndex((v) => v.name === name);
+	if (index !== -1) {
+		todos[index] = { ...todos[index], ...update };
+	}
+
 	return true;
 }
 
