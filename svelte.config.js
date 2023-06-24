@@ -19,6 +19,9 @@ const config = {
 		// hydrate the <div id="svelte"> element in src/app.html
 		// target: '#svelte'
 	},
-	preprocess: vitePreprocess()
+	preprocess: vitePreprocess(),
+	shadcn: {
+		componentPath: './src/lib/components/ui'
+	}
 };
 export default config;

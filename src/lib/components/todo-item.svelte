@@ -2,6 +2,18 @@
 	import { failure, success } from '$lib/my-toast';
 	import type { TodoItem } from '$lib/service';
 	import { deleteTodo } from '$lib/store';
+	import {
+		Dialog,
+		DialogContent,
+		DialogDescription,
+		DialogFooter,
+		DialogHeader,
+		DialogTitle,
+		DialogTrigger
+	} from './ui/dialog';
+	import { Label } from './ui/label';
+	import { Button, buttonVariants } from './ui/button';
+	import { Input } from './ui/input';
 
 	export let todo: TodoItem;
 
@@ -38,6 +50,30 @@
 			>
 				Delete
 			</button>
+			<Dialog modal={true}>
+				<DialogTrigger class={buttonVariants({ variant: 'outline' })}>Edit Profile</DialogTrigger>
+				<DialogContent class="sm:max-w-[425px]">
+					<DialogHeader>
+						<DialogTitle>Edit profile</DialogTitle>
+						<DialogDescription>
+							Make changes to your profile here. Click save when you're done.
+						</DialogDescription>
+					</DialogHeader>
+					<div class="grid gap-4 py-4">
+						<div class="grid grid-cols-4 items-center gap-4">
+							<Label class="text-right">Name</Label>
+							<Input id="name" value="Pedro Duarte" class="col-span-3" />
+						</div>
+						<div class="grid grid-cols-4 items-center gap-4">
+							<Label class="text-right">Username</Label>
+							<Input id="username" value="@peduarte" class="col-span-3" />
+						</div>
+					</div>
+					<DialogFooter>
+						<Button type="submit">Save changes</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	</div>
 {/if}

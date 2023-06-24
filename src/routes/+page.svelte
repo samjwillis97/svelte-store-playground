@@ -4,6 +4,9 @@
 	import StoreConfig from '$lib/components/store-config.svelte';
 	import TodoItem from '$lib/components/todo-item.svelte';
 	import { failure, success } from '$lib/my-toast';
+	import Button from '$components/ui/button/Button.svelte';
+	import Input from '$components/ui/input/Input.svelte';
+	import Label from '$components/ui/label/Label.svelte';
 
 	let todos = getTodos();
 	let clearAllMutator = clearAll({
@@ -50,39 +53,32 @@
 	</div>
 
 	<div class="flex flex-row gap-2.5 items-center w-full">
-		<input
-			placeholder="Item"
+		<Input
+			placeholder="Todo"
 			type="text"
 			bind:value={todoText}
 			on:keyup={handleInputKeyup}
-			class="shadow appearance-none border rounded px-3 py-2 text-gray"
+			class="w-96"
 		/>
-		<button
-			disabled={$addTodoMutator.isLoading || !todoText}
-			on:click={handleAddItem}
-			class="py-2 px-4 rounded text-white bg-blue-500 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-200"
-			>Add Item</button
+		<Button disabled={$addTodoMutator.isLoading || !todoText} on:click={handleAddItem}
+			>Add Item</Button
 		>
-		<button
-			on:click={clearAllItems}
-			class="py-2 px-4 rounded text-white bg-red-500 hover:bg-red-700 active:bg-red-800 disable:bg-red-200"
-			>Clear All</button
-		>
+		<Button variant="destructive" on:click={clearAllItems}>Clear All</Button>
 		<div class="flex flex-row gap-1">
-			<p>Current Status:</p>
+			<Label>Current Status:</Label>
 			{#if $addTodoMutator.isLoading}
-				<p>Adder Loading,</p>
+				<Label>Adder Loading,</Label>
 			{/if}
 			{#if $addTodoMutator.isError}
-				<p>Error Adding,</p>
+				<Label>Error Adding,</Label>
 			{/if}
 			{#if $todos.isLoading}
-				<p>Fetching Items,</p>
+				<Label>Fetching Items,</Label>
 			{:else if !$todos.isError}
-				<p>Waiting For Input...</p>
+				<Label>Waiting For Input...</Label>
 			{/if}
 			{#if $todos.isError}
-				<p>Error Occured Fetching - Retrying</p>
+				<Label>Error Occured Fetching - Retrying</Label>
 			{/if}
 		</div>
 	</div>
