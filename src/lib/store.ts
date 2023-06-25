@@ -3,7 +3,7 @@ import { Mutator, createQuery, mutate, type StoreValue } from './my-store.js';
 import { get, add, deleteItem, deleteAll, type TodoItem } from './service.js';
 
 export function getTodos(): Writable<StoreValue<TodoItem[]>> {
-	return createQuery<TodoItem[]>('todos', get);
+	return createQuery<TodoItem[]>(['todos'], get);
 }
 
 export function addTodo(options?: {
@@ -11,7 +11,7 @@ export function addTodo(options?: {
 	onErrorFn?: (name: string) => void;
 }): Writable<Mutator<TodoItem[], { name: string }>> {
 	return mutate<TodoItem[], { name: string }>(
-		'todos',
+		['todos'],
 		async (name: string) => {
 			await add(name);
 		},
@@ -30,7 +30,7 @@ export function deleteTodo(options?: {
 	onErrorFn?: (name: string) => void;
 }): Writable<Mutator<TodoItem[], { name: string }>> {
 	return mutate<TodoItem[], { name: string }>(
-		'todos',
+		['todos'],
 		async (name: string) => {
 			await deleteItem(name);
 		},
@@ -52,7 +52,7 @@ export function clearAll(options?: {
 	onErrorFn?: (name: string) => void;
 }): Writable<Mutator<TodoItem[], never>> {
 	return mutate<TodoItem[], never>(
-		'todos',
+		['todos'],
 		async () => {
 			await deleteAll();
 		},

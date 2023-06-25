@@ -21,12 +21,74 @@ export function updateConfig(updated: StoreConfig) {
 	config = updated;
 }
 
-// FIXME: Would love to get rid of this any - unsure if it will be possible
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const storeMap: Map<string, any> = new Map();
+class QueryCache {
+	private cache: { [key: string]: CacheValue<unknown> } = {};
 
-export type MapValue<T> = {
-	function: () => Promise<T>;
+	constructor() {
+		return this;
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	get<T>(key: any[]): CacheValue<T> {
+		const serialized = this.serializeKey(key);
+		const value = this.coerceAndCheckUnknown<CacheValue<T>>(this.cache[serialized]);
+		if (!value) throw new Error('Key not found');
+		return value;
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	has(key: any[]): boolean {
+		const serialized = this.serializeKey(key);
+		if (this.coerceAndCheckUnknown(this.cache[serialized])) {
+			return true;
+		}
+		return false;
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	set<T>(key: any[], fn: QueryFn<T>, options?: QueryOptions<T>): CacheValue<T> {
+		const serialized = this.serializeKey(key);
+		const value = {
+			function: fn,
+			store: writable({
+				isLoading: true,
+				isError: false,
+				data: undefined
+			})
+		};
+
+		const existing = this.getSerialized<T>(serialized);
+		if (existing) return existing;
+
+		this.cache[serialized] = value;
+		return value;
+	}
+
+	private getSerialized<T>(key: string): CacheValue<T> | undefined {
+		return this.coerceAndCheckUnknown<CacheValue<T>>(this.cache[key]);
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	private serializeKey(key: any[]): string {
+		return key.join('|');
+	}
+
+	private coerceAndCheckUnknown<T>(value: unknown): T | undefined {
+		if (typeof value === 'undefined' || value === null) {
+			return undefined;
+		}
+
+		return value as T;
+	}
+}
+
+export type QueryFn<T> = () => Promise<T>;
+export type QueryOptions<T> = {
+	staleTime?: number;
+};
+
+export type CacheValue<T> = {
+	function: QueryFn<T>;
 	store: Writable<StoreValue<T>>;
 };
 
@@ -36,58 +98,63 @@ export type StoreValue<T> = {
 	data: T | undefined;
 };
 
-// TODO: Understand how a list of keys would work - in regards to hashing etc.
-export function createQuery<T>(key: string, fn: () => Promise<T>): Writable<StoreValue<T>> {
-	const storeValue = storeMap.get(key);
-	if (storeValue) {
+export type QueryConfig = {
+	staleTime: 1000;
+};
+
+const cache = new QueryCache();
+
+export function createQuery<T>(
+	key: string[],
+	fn: QueryFn<T>,
+	options?: QueryOptions<T>
+): Writable<StoreValue<T>> {
+	if (cache.has(key)) {
 		refresh(key);
-		return storeValue.store as Writable<StoreValue<T>>;
+		return cache.get<T>(key).store;
 	}
 
 	if (DEBUG) console.log(`creating: ${key}`);
-	const mapValue = newMapValue(fn);
 
-	storeMap.set(key, mapValue);
-
-	tryFunction(mapValue, fn);
-
-	return storeMap.get(key).store as Writable<StoreValue<T>>;
+	const value = cache.set(key, fn, options);
+	tryFunction(value, fn);
+	return value.store;
 }
 
-function tryFunction<T>(mapValue: MapValue<T>, fn: () => Promise<T>, tryCount = 0) {
+function tryFunction<T>(cacheValue: CacheValue<T>, fn: QueryFn<T>, tryCount = 0) {
 	if (DEBUG) console.log(`executing fn - try ${tryCount}`);
 	if (tryCount < config.retryBackoffTime) {
 		fn()
-			.then((v) => setMapValueValue(mapValue, v))
+			.then((v) => updateStoreValue(cacheValue, v))
 			.catch(() => {
-				mapValue.store.update((v) => {
+				cacheValue.store.update((v) => {
 					v.isError = true;
 					return v;
 				});
 				tryCount = tryCount + 1;
 				if (DEBUG) console.log(`retry: ${tryCount}`);
 				setTimeout(() => {
-					tryFunction<T>(mapValue, fn, tryCount);
+					tryFunction<T>(cacheValue, fn, tryCount);
 				}, tryCount * config.retryBackoffTime);
 			});
 	}
 }
 
-export function refresh<T>(key: string) {
+export function refresh<T>(key: string[]) {
 	if (DEBUG) console.log(`refreshing: ${key}`);
-	if (!storeMap.has(key)) return;
+	if (!cache.has(key)) return;
 
-	const mapValue = storeMap.get(key) as MapValue<T>;
-	mapValue.store.update((v) => {
+	const cacheValue = cache.get<T>(key);
+	cacheValue.store.update((v) => {
 		v.isLoading = true;
 		return v;
 	});
 
-	tryFunction(mapValue, mapValue.function);
+	tryFunction(cacheValue, cacheValue.function);
 }
 
 export class Mutator<TStore, TArgs> {
-	private key: string;
+	private key: string[];
 	private fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<void>;
 	private optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore;
 
@@ -98,7 +165,7 @@ export class Mutator<TStore, TArgs> {
 	public isError = false;
 
 	constructor(
-		key: string,
+		key: string[],
 		fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<void>,
 		options?: {
 			optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore;
@@ -119,15 +186,15 @@ export class Mutator<TStore, TArgs> {
 
 		if (DEBUG) console.log(`mutating v2 ${this.key}`);
 
-		const mapValue = storeMap.get(this.key) as MapValue<TStore>;
-		const currentValue = get(mapValue.store).data;
+		const cacheValue = cache.get<TStore>(this.key);
+		const currentValue = get(cacheValue.store).data;
 		const copiedValue = JSON.parse(JSON.stringify(currentValue));
 
 		// NOTE: For me later, this happens for looading is triggered
 		// because loading is only triggered once the refetch has started
 		if (this.optimisticMutateFn && currentValue) {
 			const updated = this.optimisticMutateFn(currentValue, ...args);
-			mapValue.store.update((store) => {
+			cacheValue.store.update((store) => {
 				store.data = updated;
 				return store;
 			});
@@ -135,7 +202,7 @@ export class Mutator<TStore, TArgs> {
 
 		this.fn(...args)
 			.then(() => {
-				if (mapValue) {
+				if (cacheValue) {
 					refresh(this.key);
 				}
 
@@ -150,7 +217,7 @@ export class Mutator<TStore, TArgs> {
 					this.onErrorFn(...args);
 				}
 				if (this.optimisticMutateFn) {
-					mapValue.store.update((store) => {
+					cacheValue.store.update((store) => {
 						store.data = copiedValue;
 						return store;
 					});
@@ -163,7 +230,7 @@ export class Mutator<TStore, TArgs> {
 }
 
 export function mutate<TStore, TArgs>(
-	key: string,
+	key: string[],
 	fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<void>,
 	options?: {
 		optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore;
@@ -175,23 +242,12 @@ export function mutate<TStore, TArgs>(
 	return writable(mutator);
 }
 
-function newMapValue<T>(fn: () => Promise<T>): MapValue<T> {
-	return {
-		function: fn,
-		store: writable({
-			isLoading: true,
-			isError: false,
-			data: undefined
-		})
-	};
-}
-
-function setMapValueValue<T>(mapValue: MapValue<T>, value: T) {
-	mapValue.store.update((store) => {
+function updateStoreValue<T>(cacheValue: CacheValue<T>, value: T) {
+	cacheValue.store.update((store) => {
 		store.isLoading = false;
 		store.isError = false;
 		store.data = value;
 		return store;
 	});
-	return mapValue;
+	return cacheValue;
 }
