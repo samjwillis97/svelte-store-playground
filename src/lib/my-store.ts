@@ -46,7 +46,19 @@ class QueryCache {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	refreshIfStale(key: any[]) {
+		this.refresh(key);
+	}
+
+	// TODO: This shoudl just set data as stale and call refresh
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	invalidate(key: any[]) {
+		this.refresh(key);
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	set<T>(key: any[], fn: QueryFn<T>, options?: QueryOptions<T>): CacheValue<T> {
+		if (DEBUG) console.log(`creating: ${key}`);
 		const serialized = this.serializeKey(key);
 		const value = {
 			function: fn,
@@ -61,7 +73,54 @@ class QueryCache {
 		if (existing) return existing;
 
 		this.cache[serialized] = value;
+		this.tryFunction(value);
+
 		return value;
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	private refresh(key: any[]) {
+		if (DEBUG) console.log(`refreshing: ${key}`);
+		try {
+			const cacheValue = this.get(key);
+			cacheValue.store.update((v) => {
+				v.isLoading = true;
+				return v;
+			});
+			this.tryFunction(cacheValue);
+		} catch {
+			return;
+		}
+	}
+
+	private tryFunction(cacheValue: CacheValue<unknown>, tryCount = 0) {
+		if (DEBUG) console.log(`executing fn - try ${tryCount}`);
+		if (tryCount < config.retryBackoffTime) {
+			cacheValue
+				.function()
+				.then((v) => this.updateStoreValue(cacheValue, v))
+				.catch(() => {
+					cacheValue.store.update((v) => {
+						v.isError = true;
+						return v;
+					});
+					tryCount = tryCount + 1;
+					if (DEBUG) console.log(`retry: ${tryCount}`);
+					setTimeout(() => {
+						this.tryFunction(cacheValue, tryCount);
+					}, tryCount * config.retryBackoffTime);
+				});
+		}
+	}
+
+	private updateStoreValue<T>(cacheValue: CacheValue<T>, value: T) {
+		cacheValue.store.update((store) => {
+			store.isLoading = false;
+			store.isError = false;
+			store.data = value;
+			return store;
+		});
+		return cacheValue;
 	}
 
 	private getSerialized<T>(key: string): CacheValue<T> | undefined {
@@ -70,6 +129,7 @@ class QueryCache {
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	private serializeKey(key: any[]): string {
+		// if its an object sort keys by alphabetical
 		return key.join('|');
 	}
 
@@ -110,67 +170,34 @@ export function createQuery<T>(
 	options?: QueryOptions<T>
 ): Writable<StoreValue<T>> {
 	if (cache.has(key)) {
-		refresh(key);
+		cache.refreshIfStale(key);
 		return cache.get<T>(key).store;
 	}
 
-	if (DEBUG) console.log(`creating: ${key}`);
-
 	const value = cache.set(key, fn, options);
-	tryFunction(value, fn);
 	return value.store;
 }
 
-function tryFunction<T>(cacheValue: CacheValue<T>, fn: QueryFn<T>, tryCount = 0) {
-	if (DEBUG) console.log(`executing fn - try ${tryCount}`);
-	if (tryCount < config.retryBackoffTime) {
-		fn()
-			.then((v) => updateStoreValue(cacheValue, v))
-			.catch(() => {
-				cacheValue.store.update((v) => {
-					v.isError = true;
-					return v;
-				});
-				tryCount = tryCount + 1;
-				if (DEBUG) console.log(`retry: ${tryCount}`);
-				setTimeout(() => {
-					tryFunction<T>(cacheValue, fn, tryCount);
-				}, tryCount * config.retryBackoffTime);
-			});
-	}
-}
-
-export function refresh<T>(key: string[]) {
-	if (DEBUG) console.log(`refreshing: ${key}`);
-	if (!cache.has(key)) return;
-
-	const cacheValue = cache.get<T>(key);
-	cacheValue.store.update((v) => {
-		v.isLoading = true;
-		return v;
-	});
-
-	tryFunction(cacheValue, cacheValue.function);
-}
+export type MutatorArgs<T> = Array<T[keyof T]>;
 
 export class Mutator<TStore, TArgs> {
 	private key: string[];
-	private fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<void>;
-	private optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore;
+	private fn: (...args: MutatorArgs<TArgs>) => Promise<void>;
+	private optimisticMutateFn?: (data: TStore, ...args: MutatorArgs<TArgs>) => TStore;
 
-	private onSuccessFn?: (...args: Array<TArgs[keyof TArgs]>) => void;
-	private onErrorFn?: (...args: Array<TArgs[keyof TArgs]>) => void;
+	private onSuccessFn?: (...args: MutatorArgs<TArgs>) => void;
+	private onErrorFn?: (...args: MutatorArgs<TArgs>) => void;
 
 	public isLoading = false;
 	public isError = false;
 
 	constructor(
 		key: string[],
-		fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<void>,
+		fn: (...args: MutatorArgs<TArgs>) => Promise<void>,
 		options?: {
-			optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore;
-			onSuccessFn?: (...args: Array<TArgs[keyof TArgs]>) => void;
-			onErrorFn?: (...args: Array<TArgs[keyof TArgs]>) => void;
+			optimisticMutateFn?: (data: TStore, ...args: MutatorArgs<TArgs>) => TStore;
+			onSuccessFn?: (...args: MutatorArgs<TArgs>) => void;
+			onErrorFn?: (...args: MutatorArgs<TArgs>) => void;
 		}
 	) {
 		this.key = key;
@@ -180,18 +207,18 @@ export class Mutator<TStore, TArgs> {
 		this.onErrorFn = options?.onErrorFn;
 	}
 
-	public mutate(...args: Array<TArgs[keyof TArgs]>) {
+	public mutate(...args: MutatorArgs<TArgs>) {
 		this.isLoading = true;
 		this.isError = false;
 
 		if (DEBUG) console.log(`mutating v2 ${this.key}`);
 
 		const cacheValue = cache.get<TStore>(this.key);
-		const currentValue = get(cacheValue.store).data;
+		const currentValue = get(cacheValue.store).data; // NOTE: This is not very performant.
+
+		// FIXME: Surely a better way to do this - just want to rollback on failure
 		const copiedValue = JSON.parse(JSON.stringify(currentValue));
 
-		// NOTE: For me later, this happens for looading is triggered
-		// because loading is only triggered once the refetch has started
 		if (this.optimisticMutateFn && currentValue) {
 			const updated = this.optimisticMutateFn(currentValue, ...args);
 			cacheValue.store.update((store) => {
@@ -202,9 +229,7 @@ export class Mutator<TStore, TArgs> {
 
 		this.fn(...args)
 			.then(() => {
-				if (cacheValue) {
-					refresh(this.key);
-				}
+				cache.invalidate(this.key);
 
 				if (this.onSuccessFn) {
 					this.onSuccessFn(...args);
@@ -231,23 +256,13 @@ export class Mutator<TStore, TArgs> {
 
 export function mutate<TStore, TArgs>(
 	key: string[],
-	fn: (...args: Array<TArgs[keyof TArgs]>) => Promise<void>,
+	fn: (...args: MutatorArgs<TArgs>) => Promise<void>,
 	options?: {
-		optimisticMutateFn?: (data: TStore, ...args: Array<TArgs[keyof TArgs]>) => TStore;
-		onSuccessFn?: (...args: Array<TArgs[keyof TArgs]>) => void;
-		onErrorFn?: (...args: Array<TArgs[keyof TArgs]>) => void;
+		optimisticMutateFn?: (data: TStore, ...args: MutatorArgs<TArgs>) => TStore;
+		onSuccessFn?: (...args: MutatorArgs<TArgs>) => void;
+		onErrorFn?: (...args: MutatorArgs<TArgs>) => void;
 	}
 ): Writable<Mutator<TStore, TArgs>> {
 	const mutator = new Mutator(key, fn, options);
 	return writable(mutator);
-}
-
-function updateStoreValue<T>(cacheValue: CacheValue<T>, value: T) {
-	cacheValue.store.update((store) => {
-		store.isLoading = false;
-		store.isError = false;
-		store.data = value;
-		return store;
-	});
-	return cacheValue;
 }
