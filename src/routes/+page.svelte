@@ -80,6 +80,9 @@
 			{#if $todos.isError}
 				<Label>Error Occured Fetching - Retrying</Label>
 			{/if}
+			{#if $todos.isStale}
+				<Label>Data Stale</Label>
+			{/if}
 		</div>
 	</div>
 

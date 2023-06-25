@@ -3,7 +3,7 @@ import { Mutator, createQuery, mutate, type StoreValue } from './my-store.js';
 import { get, add, deleteItem, deleteAll, type TodoItem } from './service.js';
 
 export function getTodos(): Writable<StoreValue<TodoItem[]>> {
-	return createQuery<TodoItem[]>(['todos'], get);
+	return createQuery<TodoItem[]>(['todos'], get, { staleTime: 10000 });
 }
 
 export function addTodo(options?: {

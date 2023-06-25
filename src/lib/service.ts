@@ -35,7 +35,6 @@ export async function get() {
 	await sleep(config.sleepTime);
 	if (shouldError()) throw new Error('unable to get');
 	if (DEBUG) console.log('service: get');
-	if (DEBUG) console.log(todos);
 	// NOTE: Stringify used to prevent sending back the same ref
 	return JSON.parse(JSON.stringify(todos));
 }
@@ -45,7 +44,6 @@ export async function add(name: string) {
 	if (shouldError()) throw new Error('unable to add');
 	todos.push({ name });
 	if (DEBUG) console.log('service: add');
-	if (DEBUG) console.log(todos);
 	return true;
 }
 
@@ -53,7 +51,6 @@ export async function update(name: string, update: UpdateTodoItem) {
 	await sleep(config.sleepTime);
 	if (shouldError()) throw new Error('unable to update');
 	if (DEBUG) console.log('service: update');
-	if (DEBUG) console.log(todos);
 
 	const index = todos.findIndex((v) => v.name === name);
 	if (index !== -1) {
@@ -68,7 +65,6 @@ export async function deleteAll() {
 	if (shouldError()) throw new Error('unable to deleteAll');
 	todos = [];
 	if (DEBUG) console.log('service: deleteAll');
-	if (DEBUG) console.log(todos);
 	return true;
 }
 
@@ -80,7 +76,6 @@ export async function deleteItem(name: string) {
 		todos.splice(index, 1);
 	}
 	if (DEBUG) console.log('service: deleteOne');
-	if (DEBUG) console.log(todos);
 	return true;
 }
 

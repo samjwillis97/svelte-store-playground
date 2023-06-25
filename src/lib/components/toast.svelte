@@ -26,7 +26,7 @@
 
 	.wrap :global(._toastItem) {
 		/* Border isn't working properly */
-		@apply rounded-md drop-shadow-lg opacity-80;
+		@apply rounded-md drop-shadow-lg opacity-90;
 		min-height: unset;
 	}
 

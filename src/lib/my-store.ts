@@ -28,6 +28,8 @@ class QueryCache {
 		return this;
 	}
 
+	// get, returns the value in the cache or throws an error if
+	// it doesn't exist
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	get<T>(key: any[]): CacheValue<T> {
 		const serialized = this.serializeKey(key);
@@ -36,6 +38,46 @@ class QueryCache {
 		return value;
 	}
 
+	// set, will create a new Cache value and store it in the cache
+	// with the key, it will also start a subsciption to refresh if stale.
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	set<T>(key: any[], fn: QueryFn<T>, options?: QueryOptions<T>): CacheValue<T> {
+		if (DEBUG) console.log(`creating: ${key}`);
+		const serialized = this.serializeKey(key);
+		const value = {
+			function: fn,
+			options: options ?? {},
+			store: writable({
+				isLoading: true,
+				isError: false,
+				isStale: false,
+				data: undefined
+			})
+		};
+
+		const existing = this.getSerialized<T>(serialized);
+		if (existing) return existing;
+
+		// FIXME: Still seems to be bug here when vite refreshes
+        // Its like there is a new instance for each refresh?
+		value.store.subscribe((v) => {
+			if (v.isStale && !v.isLoading) {
+				if (DEBUG) console.log('refreshing stale data');
+				value.store.update((value) => {
+					value.isLoading = true;
+					return value;
+				});
+				this.tryFunction(value);
+			}
+		});
+
+		this.cache[serialized] = value;
+		this.tryFunction(value);
+
+		return value;
+	}
+
+	// has, checks whether the key exists in the cache or not
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	has(key: any[]): boolean {
 		const serialized = this.serializeKey(key);
@@ -45,37 +87,34 @@ class QueryCache {
 		return false;
 	}
 
+	// refreshIfStale, first checks if the data is stale before
+	// refreshing it, otherwise does nothing.
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	refreshIfStale(key: any[]) {
-		this.refresh(key);
+		try {
+			if (get(this.get(key).store).isStale) {
+				this.refresh(key);
+			}
+		} catch {
+			console.warn('Unable to refresh store');
+		}
 	}
 
-	// TODO: This shoudl just set data as stale and call refresh
+	// invalidate, will set the data stale and loading and also
+	// execute the function to refresh it.
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	invalidate(key: any[]) {
-		this.refresh(key);
-	}
-
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	set<T>(key: any[], fn: QueryFn<T>, options?: QueryOptions<T>): CacheValue<T> {
-		if (DEBUG) console.log(`creating: ${key}`);
-		const serialized = this.serializeKey(key);
-		const value = {
-			function: fn,
-			store: writable({
-				isLoading: true,
-				isError: false,
-				data: undefined
-			})
-		};
-
-		const existing = this.getSerialized<T>(serialized);
-		if (existing) return existing;
-
-		this.cache[serialized] = value;
-		this.tryFunction(value);
-
-		return value;
+		try {
+			const cacheValue = this.get(key);
+			cacheValue.store.update((value) => {
+				value.isStale = true;
+				value.isLoading = true;
+				return value;
+			});
+			this.tryFunction(cacheValue);
+		} catch {
+			console.warn('Unable to invalidate and refresh store');
+		}
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,7 +137,7 @@ class QueryCache {
 		if (tryCount < config.retryBackoffTime) {
 			cacheValue
 				.function()
-				.then((v) => this.updateStoreValue(cacheValue, v))
+				.then((v) => this.setStoreValue(cacheValue, v))
 				.catch(() => {
 					cacheValue.store.update((v) => {
 						v.isError = true;
@@ -113,14 +152,36 @@ class QueryCache {
 		}
 	}
 
-	private updateStoreValue<T>(cacheValue: CacheValue<T>, value: T) {
+	private setStoreValue<T>(cacheValue: CacheValue<T>, value: T) {
 		cacheValue.store.update((store) => {
 			store.isLoading = false;
 			store.isError = false;
+			store.isStale = false;
 			store.data = value;
 			return store;
 		});
+
+		clearTimeout(cacheValue.staleTimer);
+		cacheValue.staleTimer = undefined;
+
+		this.startStaleTimer(cacheValue);
+
 		return cacheValue;
+	}
+
+	// TODO: Probably shouldn't auto-fetch data if tab is in background etc. Not sure how to handle that
+	private startStaleTimer(cacheValue: CacheValue<unknown>) {
+		if (cacheValue.options.staleTime && cacheValue.options.staleTime > 0) {
+			if (!cacheValue.staleTimer && cacheValue.staleTimer !== 0) {
+				cacheValue.staleTimer = setTimeout(() => {
+					cacheValue.staleTimer = undefined;
+					cacheValue.store.update((store) => {
+						store.isStale = true;
+						return store;
+					});
+				}, cacheValue.options.staleTime);
+			}
+		}
 	}
 
 	private getSerialized<T>(key: string): CacheValue<T> | undefined {
@@ -131,6 +192,11 @@ class QueryCache {
 	private serializeKey(key: any[]): string {
 		// if its an object sort keys by alphabetical
 		return key.join('|');
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	private deserializeKey(key: string): any[] {
+		return key.split('|');
 	}
 
 	private coerceAndCheckUnknown<T>(value: unknown): T | undefined {
@@ -149,12 +215,15 @@ export type QueryOptions<T> = {
 
 export type CacheValue<T> = {
 	function: QueryFn<T>;
+	staleTimer?: number;
+	options: QueryOptions<T>;
 	store: Writable<StoreValue<T>>;
 };
 
 export type StoreValue<T> = {
 	isError: boolean;
 	isLoading: boolean;
+	isStale: boolean;
 	data: T | undefined;
 };
 
@@ -181,6 +250,9 @@ export function createQuery<T>(
 export type MutatorArgs<T> = Array<T[keyof T]>;
 
 export class Mutator<TStore, TArgs> {
+	private workQueue: MutatorArgs<TArgs>[] = [];
+	private working = false;
+
 	private key: string[];
 	private fn: (...args: MutatorArgs<TArgs>) => Promise<void>;
 	private optimisticMutateFn?: (data: TStore, ...args: MutatorArgs<TArgs>) => TStore;
@@ -205,52 +277,85 @@ export class Mutator<TStore, TArgs> {
 		this.optimisticMutateFn = options?.optimisticMutateFn;
 		this.onSuccessFn = options?.onSuccessFn;
 		this.onErrorFn = options?.onErrorFn;
+
+		this.startProcessing();
 	}
 
 	public mutate(...args: MutatorArgs<TArgs>) {
+		this.workQueue.push(args);
+	}
+
+	private performMutation(...args: MutatorArgs<TArgs>) {
+		this.working = true;
 		this.isLoading = true;
 		this.isError = false;
 
-		if (DEBUG) console.log(`mutating v2 ${this.key}`);
+		try {
+			if (DEBUG) console.log(`mutating v2 ${this.key}`);
 
-		const cacheValue = cache.get<TStore>(this.key);
-		const currentValue = get(cacheValue.store).data; // NOTE: This is not very performant.
+			// NOTE: There is a racey kind of condition - almost want to keep an optimistic version of the data
+			// If you quickly add to values to an array, the first gets optimistically added,
+			// the second then gets optimistically added to the array before the first is actually added to the array
+			// So before it gets hydrated from the data source you see the array missing the first value.
+			//
+			// Maybe we can keep the optimistic value stored in the mutator itself.. and modify that as required
+			// Problem is for every mutation that occurs we need to keep a copy of the before, such that if an error
+			// occurs we can roll it back then apply the following mutations over the top..
+			const cacheValue = cache.get<TStore>(this.key);
+			const currentValue = get(cacheValue.store).data; // NOTE: This is not very performant.
 
-		// FIXME: Surely a better way to do this - just want to rollback on failure
-		const copiedValue = JSON.parse(JSON.stringify(currentValue));
+			// FIXME: Surely a better way to do this - just want to rollback on failure
+			const copiedValue = JSON.parse(JSON.stringify(currentValue));
 
-		if (this.optimisticMutateFn && currentValue) {
-			const updated = this.optimisticMutateFn(currentValue, ...args);
-			cacheValue.store.update((store) => {
-				store.data = updated;
-				return store;
-			});
+			if (this.optimisticMutateFn && currentValue) {
+				const updated = this.optimisticMutateFn(currentValue, ...args);
+				cacheValue.store.update((store) => {
+					store.data = updated;
+					return store;
+				});
+			}
+
+			this.fn(...args)
+				.then(() => {
+					cache.invalidate(this.key);
+
+					if (this.onSuccessFn) {
+						this.onSuccessFn(...args);
+					}
+				})
+				.catch(() => {
+					this.isError = true;
+					if (DEBUG) console.log(`error mutating: ${this.key}`);
+					if (this.onErrorFn) {
+						this.onErrorFn(...args);
+					}
+					if (this.optimisticMutateFn) {
+						cacheValue.store.update((store) => {
+							store.data = copiedValue;
+							return store;
+						});
+					}
+				})
+				.finally(() => {
+					this.isLoading = false;
+				});
+		} finally {
+			this.working = false;
 		}
+	}
 
-		this.fn(...args)
-			.then(() => {
-				cache.invalidate(this.key);
-
-				if (this.onSuccessFn) {
-					this.onSuccessFn(...args);
+	private startProcessing() {
+		// This ensures that the order of the mutations occuring is correct
+		// TODO: Look at Web Workers, Event Listeners or Callbacks.. cause this sucks
+		setInterval(() => {
+			if (!this.working) {
+				const work = this.workQueue.shift();
+				if (work) {
+					// Process the work item here
+					this.performMutation(...work);
 				}
-			})
-			.catch(() => {
-				this.isError = true;
-				if (DEBUG) console.log(`error mutating: ${this.key}`);
-				if (this.onErrorFn) {
-					this.onErrorFn(...args);
-				}
-				if (this.optimisticMutateFn) {
-					cacheValue.store.update((store) => {
-						store.data = copiedValue;
-						return store;
-					});
-				}
-			})
-			.finally(() => {
-				this.isLoading = false;
-			});
+			}
+		}, 1);
 	}
 }
 
