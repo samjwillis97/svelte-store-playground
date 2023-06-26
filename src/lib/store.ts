@@ -1,6 +1,8 @@
 import type { Writable } from 'svelte/store';
-import { Mutator, createQuery, mutate, type StoreValue } from './my-store.js';
+import { createQuery, mutate } from './query-client.js';
 import { get, add, deleteItem, deleteAll, type TodoItem } from './service.js';
+import type { StoreValue } from './my-store/queryCache.js';
+import type { Mutator } from './my-store/mutator.js';
 
 export function getTodos(): Writable<StoreValue<TodoItem[]>> {
 	return createQuery<TodoItem[]>(['todos'], get, { staleTime: 10000 });

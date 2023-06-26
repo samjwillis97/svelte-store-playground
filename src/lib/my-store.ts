@@ -1,4 +1,4 @@
-import { get, writable, type Writable } from 'svelte/store';
+import { get, writable, type Unsubscriber, type Writable } from 'svelte/store';
 
 // config
 const DEBUG = true;
@@ -25,6 +25,8 @@ class QueryCache {
 	private cache: { [key: string]: CacheValue<unknown> } = {};
 
 	constructor() {
+		console.log('ctor');
+		// So this gets called every time this file gets reloaded
 		return this;
 	}
 
@@ -32,6 +34,7 @@ class QueryCache {
 	// it doesn't exist
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	get<T>(key: any[]): CacheValue<T> {
+		console.log(JSON.stringify(Array.from(Object.keys(this.cache))));
 		const serialized = this.serializeKey(key);
 		const value = this.coerceAndCheckUnknown<CacheValue<T>>(this.cache[serialized]);
 		if (!value) throw new Error('Key not found');
@@ -42,9 +45,11 @@ class QueryCache {
 	// with the key, it will also start a subsciption to refresh if stale.
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	set<T>(key: any[], fn: QueryFn<T>, options?: QueryOptions<T>): CacheValue<T> {
+		console.log(JSON.stringify(Array.from(Object.keys(this.cache))));
+		console.log('ATTEMPTING SET');
 		if (DEBUG) console.log(`creating: ${key}`);
 		const serialized = this.serializeKey(key);
-		const value = {
+		const value: CacheValue<T> = {
 			function: fn,
 			options: options ?? {},
 			store: writable({
@@ -58,9 +63,10 @@ class QueryCache {
 		const existing = this.getSerialized<T>(serialized);
 		if (existing) return existing;
 
+		console.log(`NEW SET CREATED ${key}`);
 		// FIXME: Still seems to be bug here when vite refreshes
-        // Its like there is a new instance for each refresh?
-		value.store.subscribe((v) => {
+		// Its like there is a new instance for each refresh?
+		value.isStaleSubscription = value.store.subscribe((v) => {
 			if (v.isStale && !v.isLoading) {
 				if (DEBUG) console.log('refreshing stale data');
 				value.store.update((value) => {
@@ -80,6 +86,7 @@ class QueryCache {
 	// has, checks whether the key exists in the cache or not
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	has(key: any[]): boolean {
+		console.log(JSON.stringify(Array.from(Object.keys(this.cache))));
 		const serialized = this.serializeKey(key);
 		if (this.coerceAndCheckUnknown(this.cache[serialized])) {
 			return true;
@@ -134,7 +141,7 @@ class QueryCache {
 
 	private tryFunction(cacheValue: CacheValue<unknown>, tryCount = 0) {
 		if (DEBUG) console.log(`executing fn - try ${tryCount}`);
-		if (tryCount < config.retryBackoffTime) {
+		if (tryCount < config.retryCount) {
 			cacheValue
 				.function()
 				.then((v) => this.setStoreValue(cacheValue, v))
@@ -169,6 +176,7 @@ class QueryCache {
 		return cacheValue;
 	}
 
+	// This would be better as events of callbacks or something, checkout the notify manager on tanstack
 	// TODO: Probably shouldn't auto-fetch data if tab is in background etc. Not sure how to handle that
 	private startStaleTimer(cacheValue: CacheValue<unknown>) {
 		if (cacheValue.options.staleTime && cacheValue.options.staleTime > 0) {
@@ -216,6 +224,7 @@ export type QueryOptions<T> = {
 export type CacheValue<T> = {
 	function: QueryFn<T>;
 	staleTimer?: number;
+	isStaleSubscription?: Unsubscriber;
 	options: QueryOptions<T>;
 	store: Writable<StoreValue<T>>;
 };
@@ -231,6 +240,8 @@ export type QueryConfig = {
 	staleTime: 1000;
 };
 
+// TODO: Store this in some sort of query client abstraction rather than this file
+// may prevent it from being reloaded all the fucking time
 const cache = new QueryCache();
 
 export function createQuery<T>(
@@ -239,6 +250,7 @@ export function createQuery<T>(
 	options?: QueryOptions<T>
 ): Writable<StoreValue<T>> {
 	if (cache.has(key)) {
+		console.log('CACHE ALREADY HAS KEY');
 		cache.refreshIfStale(key);
 		return cache.get<T>(key).store;
 	}
